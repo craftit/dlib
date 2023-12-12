@@ -7,7 +7,9 @@
     Please see all the other ffmpeg examples:
         - ffmpeg_info_ex.cpp
         - ffmpeg_video_decoding_ex.cpp
+        - ffmpeg_video_decoding2_ex.cpp
         - ffmpeg_video_demuxing_ex.cpp
+        - ffmpeg_video_demuxing2_ex.cpp
         - ffmpeg_video_encoding_ex.cpp
         - ffmpeg_video_muxing_ex.cpp
 */
@@ -42,13 +44,6 @@ try
 
     if (parser.option("h") || parser.option("help"))
     {
-        parser.print_options();
-        return 0;
-    }
-
-    if (!parser.option("i"))
-    {
-        cout << "Missing -i" << endl;
         parser.print_options();
         return 0;
     }
@@ -100,17 +95,10 @@ try
         }
 
         image_window win;
-
-        // By default, demuxer converts images to RGB. So we can read() and convert() to RGB without
-        // having to specify demuxer::args::args_image::fmt = AV_PIX_FMT_RGB24
-        frame f;
         array2d<rgb_pixel> img;
 
-        while (cap.read(f))
-        {
-            convert(f, img);
+        while (cap.read(img))
             win.set_image(img);
-        }
     }};
 
     std::this_thread::sleep_for(1s);
@@ -119,7 +107,7 @@ try
     {
         // The muxer acts as an RTSP client, so we don't use {"rtsp_flags", "listen"}
         // When using RTSP, it is usually a good idea to specify muxer::args::output_format = "rtsp"
-        // even though the URL has rtsp:// in its address. Whether or not you need to specify args.output_formt = "rtsp"
+        // even though the URL has rtsp:// in its address. Whether or not you need to specify args.output_format = "rtsp"
         // depends on your version of ffmpeg.
         muxer writer([&] {
             muxer::args args;

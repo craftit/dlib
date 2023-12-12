@@ -384,6 +384,28 @@ namespace
 
 // ----------------------------------------------------------------------------------------
 
+    void test_find_convex_hull()
+    {
+        print_spinner();
+        std::vector<dpoint> points{
+            { 0.0, 0.0 },
+            { 1.0, 1.0 },
+            { 2.0, 2.0 },
+            { 3.0, 1.0 },
+            { 4.0, 0.0 },
+            { 2.0, 4.0 },
+            { 1.0, 3.0 },
+        };
+        const auto hull = find_convex_hull(points);
+        DLIB_TEST(hull.size() == 4);
+        DLIB_TEST(hull[0] == dpoint(0, 0));
+        DLIB_TEST(hull[1] == dpoint(1, 3));
+        DLIB_TEST(hull[2] == dpoint(2, 4));
+        DLIB_TEST(hull[3] == dpoint(4, 0));
+    }
+
+// ----------------------------------------------------------------------------------------
+
     void test_border_enumerator()
     {
 
@@ -916,7 +938,7 @@ namespace
         const rectangle rect = triangle.get_rect();
         std::vector<double> left_boundary;
         std::vector<double> right_boundary;
-        triangle.get_convex_shape(rect.top(), rect.bottom(), left_boundary, right_boundary);
+        triangle.get_left_and_right_bounds(rect.top(), rect.bottom(), left_boundary, right_boundary);
 
         DLIB_TEST(left_boundary.size() == right_boundary.size());
 
@@ -956,6 +978,7 @@ namespace
             test_find_similarity_transform2<float>(); 
             test_line();
             test_polygon();
+            test_find_convex_hull();
         }
     } a;
 

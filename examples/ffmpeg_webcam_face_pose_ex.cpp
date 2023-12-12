@@ -34,8 +34,9 @@
 #include <dlib/gui_widgets.h>
 #include <dlib/media.h>
 
-using namespace dlib;
 using namespace std;
+using namespace dlib;
+using namespace dlib::ffmpeg;
 
 int main(int argc, const char** argv)
 {
@@ -60,13 +61,13 @@ int main(int argc, const char** argv)
             return 0;
         }
 
-        ffmpeg::demuxer cap{[&]
+        demuxer cap{[&]
         {
             ffmpeg::demuxer::args args;
-            args.filepath               = "/dev/video0";
-            args.args_image.h           = get_option(parser, "height", 0);
-            args.args_image.w           = get_option(parser, "width",  0);
-            args.args_image.framerate   = get_option(parser, "framerate", 0);
+            args.filepath   = "/dev/video0";
+            args.height     = get_option(parser, "height", 0);
+            args.width      = get_option(parser, "width",  0);
+            args.framerate  = get_option(parser, "framerate", 0);
             return args;
         }()};
 
@@ -87,15 +88,11 @@ int main(int argc, const char** argv)
         shape_predictor pose_model;
         deserialize("shape_predictor_68_face_landmarks.dat") >> pose_model;
 
-        ffmpeg::frame frame;
         array2d<rgb_pixel> img;
 
         // Grab and process frames until the main window is closed by the user.
-        while(cap.read(frame) && !win.is_closed())
+        while(cap.read(img) && !win.is_closed())
         {
-            // Convert the frame object into a dlib image object
-            convert(frame, img);
-
             // Detect faces 
             std::vector<rectangle> faces = detector(img);
             // Find the pose of each face.

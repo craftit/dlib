@@ -41,6 +41,7 @@
 
 using namespace std;
 using namespace dlib;
+using namespace dlib::ffmpeg;
 
 int main(const int argc, const char** argv)
 try
@@ -62,50 +63,39 @@ try
         return 0;
     }
 
-    const std::string filepath = get_option(parser, "i", "");
-    const std::string codec    = get_option(parser, "codec", "h264");
+    const std::string filepath = parser.option("i").argument();
+    const std::string codec    = parser.option("codec").argument();
 
-    image_window win;
+    decoder dec([&] {
+        decoder::args args;
+        args.codec_name = codec;
+        return args;
+    }());
 
-    ffmpeg::decoder::args args;
-    args.args_codec.codec_name = codec;
-
-    ffmpeg::decoder dec(args);
     if (!dec.is_open())
     {
         printf("Failed to create decoder.\n");
         return EXIT_FAILURE;
     }
 
-    dlib::ffmpeg::frame     frame;
-    array2d<rgb_pixel>      img;
-    ffmpeg::decoder_status  status{ffmpeg::DECODER_EAGAIN};
+    image_window win;
 
-    const auto pull = [&]
+    const auto callback = [&](array2d<rgb_pixel>& img)
     {
-        while ((status = dec.read(frame)) == ffmpeg::DECODER_FRAME_AVAILABLE)
-        {
-            if (frame.is_image() && frame.pixfmt() == AV_PIX_FMT_RGB24)
-            {
-                convert(frame, img);
-                win.set_image(img);
-            }
-        }
+        win.set_image(img);
     };
 
     ifstream fin{filepath, std::ios::binary};
     std::vector<char> buf(1024);
 
-    while (fin && status != ffmpeg::DECODER_CLOSED)
+    while (fin)
     {
         fin.read(buf.data(), buf.size());
         size_t ret = fin.gcount();
-        dec.push_encoded((const uint8_t*)buf.data(), ret);
-        pull();
+        dec.push((const uint8_t*)buf.data(), ret, wrap(callback));
     }
 
-    dec.flush();
-    pull();
+    dec.flush(wrap(callback));
 
     return EXIT_SUCCESS;
 }

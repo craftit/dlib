@@ -6,14 +6,10 @@ This file basically just uses CMake to compile the dlib python bindings project
 located in the tools/python folder and then puts the outputs into standard
 python packages.
 
-To build the dlib:
+To build dlib:
     python setup.py build
 To build and install:
     python setup.py install
-To package the wheel (after pip installing twine and wheel):
-    python setup.py bdist_wheel
-To upload the binary wheel to PyPi
-    twine upload dist/*.whl
 To upload the source distribution to PyPi
     python setup.py sdist 
     twine upload dist/dlib-*.tar.gz
@@ -39,7 +35,7 @@ import multiprocessing
 from distutils import log
 from math import ceil,floor
 
-from setuptools import setup, Extension
+from setuptools import find_packages, setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
@@ -177,7 +173,9 @@ def num_available_cpu_cores(ram_per_build_process_in_gb):
     if 'TRAVIS' in os.environ and os.environ['TRAVIS']=='true':
         # When building on travis-ci, just use 2 cores since travis-ci limits
         # you to that regardless of what the hardware might suggest.
-        return 2 
+        return 2
+    elif 'CMAKE_BUILD_PARALLEL_LEVEL' in os.environ and os.environ['CMAKE_BUILD_PARALLEL_LEVEL'].isnumeric():
+        return int(os.environ['CMAKE_BUILD_PARALLEL_LEVEL'])
     try:
         mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')  
         mem_gib = mem_bytes/(1024.**3)
@@ -234,7 +232,7 @@ setup(
     # We need an older more-itertools version because v6 broke pytest (for everyone, not just dlib)
     tests_require=['pytest==3.8', 'more-itertools<6.0.0'],
     #install_requires=['cmake'], # removed because the pip cmake package is busted, maybe someday it will be usable.
-    packages=['dlib'],
+    packages=find_packages(exclude=['python_examples']),
     package_dir={'': 'tools/python'},
     keywords=['dlib', 'Computer Vision', 'Machine Learning'],
     classifiers=[
@@ -248,13 +246,6 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: C++',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Scientific/Engineering :: Image Recognition',

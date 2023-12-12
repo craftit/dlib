@@ -20,15 +20,15 @@
         - ffmpeg_details.h  : contains implementations details only and everything must be in the
                               dlib::ffmpeg::details namespace
         
-        - ffmpeg_utils.h    : contains common public API. Declarations go at the bottom of the file
+        - ffmpeg_utils.h    : contains common public API. Definitions go at the bottom of the file
                               underneath a block comment saying "DEFINITIONS"
                               Also contains implementation details that depend on the public API.
                               This must still go in the dlib::ffmpeg::details namespace
         
-        - ffmpeg_demuxer.h  : contains public API for all things decoding. Similarly, declarations go 
+        - ffmpeg_demuxer.h  : contains public API for all things decoding. Similarly, definitions go 
                               at the bottom of the file underneath a block comment saying "DEFINITIONS".
 
-        - ffmpeg_muxer.h  :   contains public API for all things encoding. Similarly, declarations go 
+        - ffmpeg_muxer.h  :   contains public API for all things encoding. Similarly, definitions go 
                               at the bottom of the file underneath a block comment saying "DEFINITIONS".
                             
 */
@@ -239,12 +239,12 @@ namespace dlib { namespace ffmpeg { namespace details
 
     inline uint64_t get_layout(const AVCodecContext* pCodecCtx)
     {
-        return pCodecCtx->ch_layout.u.mask;
+        return pCodecCtx ? pCodecCtx->ch_layout.u.mask : 0;
     }
 
     inline uint64_t get_layout(const AVFrame* frame)
     {
-        return frame->ch_layout.u.mask;
+        return frame ? frame->ch_layout.u.mask : 0;
     }
 
     inline void set_layout(AVCodecContext* pCodecCtx, const uint64_t channel_layout)
@@ -259,12 +259,12 @@ namespace dlib { namespace ffmpeg { namespace details
 
     inline int get_nchannels(const AVCodecContext* pCodecCtx)
     {
-        return pCodecCtx->ch_layout.nb_channels;
+        return pCodecCtx ? pCodecCtx->ch_layout.nb_channels : 0;
     }
 
     inline int get_nchannels(const AVFrame* frame)
     {
-        return frame->ch_layout.nb_channels;
+        return frame ? frame->ch_layout.nb_channels : 0;
     }
 
     inline int get_nchannels(const uint64_t channel_layout)
@@ -305,12 +305,12 @@ namespace dlib { namespace ffmpeg { namespace details
 
     inline uint64_t get_layout(const AVCodecContext* pCodecCtx)
     {
-        return pCodecCtx->channel_layout;
+        return pCodecCtx ? pCodecCtx->channel_layout : 0;
     }
 
     inline uint64_t get_layout(const AVFrame* frame)
     {
-        return frame->channel_layout;
+        return frame ? frame->channel_layout : 0;
     }
 
     inline void set_layout(AVCodecContext* pCodecCtx, const uint64_t channel_layout)
@@ -330,12 +330,12 @@ namespace dlib { namespace ffmpeg { namespace details
 
     inline int get_nchannels(const AVCodecContext* pCodecCtx)
     {
-        return get_nchannels(pCodecCtx->channel_layout);
+        return pCodecCtx ? get_nchannels(pCodecCtx->channel_layout) : 0;
     }
 
     inline int get_nchannels(const AVFrame* frame)
     {
-        return get_nchannels(frame->channel_layout);
+        return frame ? get_nchannels(frame->channel_layout) : 0;
     }    
 
     inline void check_layout(AVCodecContext* pCodecCtx) 
@@ -479,6 +479,47 @@ namespace dlib { namespace ffmpeg { namespace details
                 printf("%s : %s\n", tag->key, tag->value);
         }
     }    
+
+// ---------------------------------------------------------------------------------------------------
+
+    inline AVCodecID pick_codec_from_filename(const std::string& filename)
+    {
+        const auto ext_pos = filename.find_last_of(".");
+
+        if (ext_pos != std::string::npos)
+        {
+            const std::string ext = filename.substr(ext_pos + 1);
+
+            if (ext == "png" || ext == "PNG")
+                return AV_CODEC_ID_PNG;
+            else if (ext == "jpeg" || ext == "jpg" || ext == "JPEG")
+                return AV_CODEC_ID_MJPEG;
+            else if (ext == "tiff")
+                return AV_CODEC_ID_TIFF;
+            else if (ext == "webp")
+                return AV_CODEC_ID_WEBP;
+            else if (ext == "bmp")
+                return AV_CODEC_ID_BMP;
+            else if (ext == "h264")
+                return AV_CODEC_ID_H264;
+            else if (ext == "h265" || ext == "hevc")
+                return AV_CODEC_ID_H265;
+            else if (ext == "aac")
+                return AV_CODEC_ID_AAC;
+            else if (ext == "ac3")
+                return AV_CODEC_ID_AC3;
+            else if (ext == "jls")
+                return AV_CODEC_ID_JPEGLS;
+            else if (ext == "jp2")
+                return AV_CODEC_ID_JPEG2000;
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
+            else if (ext == "jxl")
+                return AV_CODEC_ID_JPEGXL;
+#endif
+        }
+
+        return AV_CODEC_ID_NONE;
+    }
 
 // ---------------------------------------------------------------------------------------------------
 
